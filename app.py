@@ -25,4 +25,4 @@ def mainroute(idd=0):
         else:
             search = db.ratings_dev.find({}, {"_id": 0})
             search = list(search)
-            return f"{search} Test"
+            return f"{search} Test2"
