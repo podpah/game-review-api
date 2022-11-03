@@ -9,7 +9,7 @@ app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where())
 db = app.mongodb_client.get_database("gratings")
 
 
-@app.route("/entries/<int:idd>", methods=["GET"])  # See all posts / Send a new post
+@app.route("/entries/<int:idd>", methods=["GET", "PUT"])  # See all posts / Send a new post
 @app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
 def mainroute(idd=0):
     if request.method == "POST":
@@ -30,3 +30,21 @@ def mainroute(idd=0):
             search = db.ratings_dev.find({}, {"_id": 0})
             search = list(search)
             return f"{search} Test"
+    elif request.method == "PUT":
+        data = request.get_json()
+        author = data["author"]
+        review = data["review"]
+        game = data["game"]
+        search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
+        if not search:
+            return jsonify("ID not found"), 400
+        else:
+            if author != search["author"]:
+                return jsonify("Not authorised to edit this review"), 400
+            elif review == search["review"] and game == search["game"]:
+                return jsonify("The request body is the same as the current information"), 400
+            else:
+                newvals = {"$set": {"game": game, "review": review}}
+                db.ratings_dev.update_one(search, newvals)
+        search = db.ratings_dev.find_one({"id": idd}, {"_id": 0, "id": 0})
+        return jsonify(search)
