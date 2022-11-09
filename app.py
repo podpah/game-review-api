@@ -1,6 +1,7 @@
 import json
-
+import jwt
 import bcrypt
+
 from dotenv import dotenv_values
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
@@ -10,9 +11,15 @@ app = Flask(__name__)
 config = dotenv_values(".env")
 app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where())
 db = app.mongodb_client.get_database("gratings")
-
+jwt_sec = config["JWT_SEC"]
 
 # If there is someone logged in then unauthorized is 403 but if not then it's 401
+
+def autho():
+    print(request.authorization)
+    
+   
+    
 
 @app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See all posts / Send a new post
 @app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
@@ -30,6 +37,7 @@ def mainroute(idd=0):
         db.ratings_dev.insert_one({"id": id, "author": author, "review": review, "game": game})
         return jsonify({"Author: ": author, "Review:": review, "Game: ": game})
     elif request.method == "GET":
+        autho()
         if idd:
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
             return jsonify(search), 200
@@ -60,16 +68,20 @@ def mainroute(idd=0):
             return jsonify({"Deleted review": search["review"]}), 418
 
 
-@app.route("/register")
+@app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
     author = data["author"]
+    search = db.users.find_one({"author": author})
+    if (search):
+        return jsonify(f"The user {author} already exists")
     passwd = data["passwd"]
     passwd = passwd.encode("utf-8")
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(passwd, salt)
-    hashed.decode("utf-8")
-    insert = db.users.insert_one({"author": author, "passwd": hashed})
+    hashed = hashed.decode("utf-8")
+    count = db.users.count_documents({}) + 1
+    insert = db.users.insert_one({"author": author, "passwd": hashed, "id": count})
     return jsonify(f"User has been created! Welcome to Game Ratings {author}")
 
 
@@ -77,14 +89,14 @@ def register():
 def login():
     data = request.get_json()
     author = data["author"]
-    search = db.users.find_one({"author": author})
-    dbpass = search["pass"]
+    search = db.users.find_one({"author": author},{"_id":0})
+    dbpass = search["passwd"]
     dbpass = dbpass.encode("utf-8")
-    userPass = data["pass"]
+    userPass = data["passwd"]
     userPass = userPass.encode("utf-8")
     passCheck = bcrypt.checkpw(userPass, dbpass)
-    print(passCheck)
     if passCheck:
-        return jsonify(f"Authorised. Welcome to Game Ratings {author}"), 200
+        token = jwt.encode({"id":search["id"], "author":search["author"]},jwt_sec, algorithm="HS256")
+        return jsonify(f"Authorised. Welcome to Game Ratings {author}",token), 200
     else:
         return jsonify("Unauthorized"), 401
