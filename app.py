@@ -17,6 +17,11 @@ db = app.mongodb_client.get_database("gratings")
 @app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See all posts / Send a new post
 @app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
 def mainroute(idd=0):
+    # data = request.get_json()
+    # id = db.ratings_dev.count_documents({}) + 1
+    # author = data["author"]
+    # review = data["review"]
+    # game = data["game"]
     if request.method == "POST":
         data = request.get_json()
         id = db.ratings_dev.count_documents({}) + 1
