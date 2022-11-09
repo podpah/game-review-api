@@ -17,17 +17,16 @@ db = app.mongodb_client.get_database("gratings")
 @app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See all posts / Send a new post
 @app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
 def mainroute(idd=0):
-    # data = request.get_json()
-    # id = db.ratings_dev.count_documents({}) + 1
-    # author = data["author"]
-    # review = data["review"]
-    # game = data["game"]
-    if request.method == "POST":
+    data,author,review,game = None,None,None,None
+    try:
         data = request.get_json()
-        id = db.ratings_dev.count_documents({}) + 1
         author = data["author"]
         review = data["review"]
         game = data["game"]
+    except:
+        print("No JSON object received in body")
+    if request.method == "POST":
+        id = db.ratings_dev.count_documents({}) + 1
         db.ratings_dev.insert_one({"id": id, "author": author, "review": review, "game": game})
         return jsonify({"Author: ": author, "Review:": review, "Game: ": game})
     elif request.method == "GET":
@@ -39,10 +38,6 @@ def mainroute(idd=0):
             search = list(search)
             return jsonify(search), 200
     elif request.method == "PUT":
-        data = request.get_json()
-        author = data["author"]
-        review = data["review"]
-        game = data["game"]
         search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
         if not search:
             return jsonify("ID not found"), 400
@@ -57,8 +52,6 @@ def mainroute(idd=0):
         search = db.ratings_dev.find_one({"id": idd}, {"_id": 0, "id": 0})
         return jsonify(search)
     elif request.method == "DELETE":
-        data = request.get_json()
-        author = data["author"]
         search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
         if search["author"] != author:
             return jsonify("Not authorised to delete this review"), 403
