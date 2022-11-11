@@ -3,3 +3,4 @@ certifi
 flask
 pymongo
 bcrypt
+pyjwt
