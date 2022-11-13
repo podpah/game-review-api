@@ -16,7 +16,12 @@ jwt_sec = config["JWT_SEC"]
 # If there is someone logged in then unauthorized is 403 but if not then it's 401
 
 def autho():
-    print(request.authorization)
+    bearer = request.headers.get("Authorization")
+    print(bearer[7:])
+    decoded = jwt.decode(bearer[7:], jwt_sec, algorithms="HS256")
+    return decoded["author"]
+  
+    
     
    
     
