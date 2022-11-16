@@ -38,9 +38,9 @@ def mainroute(idd=0):
         return jsonify({"message": "INVALID TOKEN , Please get a valid token from the /login endpoint " }),400
     else:
         data,author,review,game = None,None,None,None
+        author = authorise
         try:
             data = request.get_json()
-            author = authorise
             review = data["review"]
             game = data["game"]
         except:
@@ -58,26 +58,37 @@ def mainroute(idd=0):
                 search = list(search)
                 return jsonify(search), 200
         elif request.method == "PUT":
+            search2 = db.users.find_one({"author": author}, {"_id": 0})
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
+            truth = None
+            try:
+                truth = search2["admin"]
+            except:
+                truth = False
             if not search:
                 return jsonify("ID not found"), 400
-            else:
-                if author != search["author"]:
-                    return jsonify("Not authorised to edit this review"), 403
-                elif review == search["review"] and game == search["game"]:
-                    return jsonify("The request body is the same as the current information"), 400
-                else:
-                    newvals = {"$set": {"game": game, "review": review}}
-                    db.ratings_dev.update_one(search, newvals)
+            elif review == search["review"] and game == search["game"]:
+                return jsonify("The request body is the same as the current information"), 400
+            elif search["author"] == author or truth:
+                newvals = {"$set": {"game": game, "review": review}}
+                db.ratings_dev.update_one(search, newvals)
+            elif author != search["author"]:
+                return jsonify("Not authorised to edit this review"), 403
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0, "id": 0})
             return jsonify(search)
         elif request.method == "DELETE":
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
-            if search["author"] != author:
-                return jsonify("Not authorised to delete this review"), 403
-            else:
+            search2 = db.users.find_one({"author":author}, {"_id": 0})
+            truth = None
+            try:
+                truth = search2["admin"]
+            except:
+                truth = False
+            if search["author"] == author or truth:
                 teapot = db.ratings_dev.delete_one({"id": idd})
                 return jsonify({"Deleted review": search["review"]}), 418
+            elif search["author"] != author:
+                return jsonify("Not authorised to delete this review"), 403
 
 
 @app.route("/register", methods=["POST"])
