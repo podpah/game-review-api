@@ -50,8 +50,7 @@ def mainroute(idd=0):
         except:
             print("No JSON object received in body")
         if request.method == "POST":
-            id = db.ratings_dev.count_documents({}) + 1
-            db.ratings_dev.insert_one({"id": id, "author": author, "review": review, "game": game})
+            db.ratings_dev.insert_one({"author": author, "review": review, "game": game})
             return jsonify({"Author: ": author, "Review:": review, "Game: ": game})
         elif request.method == "GET":
             if idd:
@@ -107,8 +106,7 @@ def register():
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(passwd, salt)
     hashed = hashed.decode("utf-8")
-    count = db.users.count_documents({}) + 1
-    insert = db.users.insert_one({"author": author, "passwd": hashed, "id": count})
+    insert = db.users.insert_one({"author": author, "passwd": hashed})
     return jsonify(f"User has been created! Welcome to Game Ratings {author}")
 
 
