@@ -24,12 +24,6 @@ def autho():
     except:
         return "Not verified"
 
-  
-    
-    
-   
-    
-
 @app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See all posts / Send a new post
 @app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
 def mainroute(idd=0):
