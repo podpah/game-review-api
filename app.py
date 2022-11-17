@@ -12,10 +12,6 @@ config = dotenv_values(".env")
 app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where())
 db = app.mongodb_client.get_database("gratings")
 jwt_sec = config["JWT_SEC"]
-<<<<<<< HEAD
-
-=======
->>>>>>> harold
 
 # If there is someone logged in then unauthorized is 403 but if not then it's 401
 
