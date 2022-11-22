@@ -8,12 +8,11 @@ from pymongo import MongoClient
 import certifi
 
 app = Flask(__name__)
-config = dotenv_values(".env")
-app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where())
+config = dotenv_values(".env") #  This links it to 
+app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where()) #  The certifi is here to prevent issues when connecting to mongo
 db = app.mongodb_client.get_database("gratings")
 jwt_sec = config["JWT_SEC"]
 
-# If there is someone logged in then unauthorized is 403 but if not then it's 401
 
 def autho():
     bearer = request.headers.get("Authorization")
@@ -24,8 +23,8 @@ def autho():
     except:
         return "Not verified"
 
-@app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See all posts / Send a new post
-@app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
+@app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See a specific review / Update an existing review / Delete an existing review
+@app.route("/entries/", methods=["GET", "POST"])  # See all reviews / Create a new review
 def mainroute(idd=0):
     authorise = autho();
     if(authorise == "Not verified"):
