@@ -13,6 +13,8 @@ app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where())
 db = app.mongodb_client.get_database("gratings")
 jwt_sec = config["JWT_SEC"]
 
+if __name__ == "__main__":
+    app.run(debug=True)
 
 def autho():
     bearer = request.headers.get("Authorization")
