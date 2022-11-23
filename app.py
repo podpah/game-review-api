@@ -17,9 +17,9 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 def autho():
-    bearer = request.headers.get("Authorization")
-    bearer = bearer.split(" ")[-1]
     try:
+        bearer = request.headers.get("Authorization")
+        bearer = bearer.split(" ")[-1]
         decoded = jwt.decode(bearer, jwt_sec, algorithms="HS256")
         return decoded["author"]
     except:
