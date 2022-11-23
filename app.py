@@ -1,7 +1,5 @@
-import json
 import jwt
 import bcrypt
-
 from dotenv import dotenv_values
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
