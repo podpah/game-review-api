@@ -6,13 +6,15 @@ from pymongo import MongoClient
 import certifi
 
 app = Flask(__name__)
-config = dotenv_values(".env") #  This links it to 
-app.mongodb_client = MongoClient(config["ATLAS_URI"], tlsCAFile=certifi.where()) #  The certifi is here to prevent issues when connecting to mongo
+config = dotenv_values(".env")  # This links it to the .env file with your secret variables
+# The certifi is here to prevent issues when connecting to mongo
+app.mongodb_client = MongoClient(config["ATLAS_URI"],tlsCAFile=certifi.where())  
 db = app.mongodb_client.get_database("gratings")
 jwt_sec = config["JWT_SEC"]
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 def autho():
     try:
@@ -23,14 +25,16 @@ def autho():
     except:
         return "Not verified"
 
-@app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See a specific review / Update an existing review / Delete an existing review
+
+@app.route("/entries/<int:idd>", methods=["GET", "PUT",
+                                          "DELETE"])  # See a specific review / Update an existing review / Delete an existing review
 @app.route("/entries/", methods=["GET", "POST"])  # See all reviews / Create a new review
 def mainroute(idd=0):
     authorise = autho();
-    if(authorise == "Not verified"):
-        return jsonify({"message": "INVALID TOKEN , Please get a valid token from the /login endpoint " }),400
+    if authorise == "Not verified":
+        return jsonify({"message": "INVALID TOKEN , Please get a valid token from the /login endpoint "}), 400
     else:
-        data,author,review,game = None,None,None,None
+        data, author, review, game = None, None, None, None
         author = authorise
         try:
             data = request.get_json()
@@ -70,7 +74,7 @@ def mainroute(idd=0):
             return jsonify(search)
         elif request.method == "DELETE":
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
-            search2 = db.users.find_one({"author":author}, {"_id": 0})
+            search2 = db.users.find_one({"author": author}, {"_id": 0})
             truth = None
             try:
                 truth = search2["admin"]
@@ -88,7 +92,7 @@ def register():
     data = request.get_json()
     author = data["author"]
     search = db.users.find_one({"author": author})
-    if (search):
+    if search:
         return jsonify(f"The user {author} already exists")
     passwd = data["passwd"]
     passwd = passwd.encode("utf-8")
@@ -103,14 +107,14 @@ def register():
 def login():
     data = request.get_json()
     author = data["author"]
-    search = db.users.find_one({"author": author},{"_id":0})
+    search = db.users.find_one({"author": author}, {"_id": 0})
     dbpass = search["passwd"]
     dbpass = dbpass.encode("utf-8")
     userPass = data["passwd"]
     userPass = userPass.encode("utf-8")
     passCheck = bcrypt.checkpw(userPass, dbpass)
     if passCheck:
-        token = jwt.encode({"id":search["id"], "author":search["author"]},jwt_sec, algorithm="HS256")
-        return jsonify(f"Authorised. Welcome to Game Ratings {author}",token), 200
+        token = jwt.encode({"id": search["id"], "author": search["author"]}, jwt_sec, algorithm="HS256")
+        return jsonify(f"Authorised. Welcome to Game Ratings {author}", token), 200
     else:
         return jsonify("Unauthorized"), 401
