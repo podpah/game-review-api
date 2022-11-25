@@ -25,9 +25,9 @@ def autho():
     except:
         return "Not verified"
 
-
-@app.route("/entries/<int:idd>", methods=["GET", "PUT",
-                                          "DELETE"])  # See a specific review / Update an existing review / Delete an existing review
+    
+# See a specific review / Update an existing review / Delete an existing review
+@app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  
 @app.route("/entries/", methods=["GET", "POST"])  # See all reviews / Create a new review
 def mainroute(idd=0):
     authorise = autho();
