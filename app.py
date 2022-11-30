@@ -44,10 +44,10 @@ def check_json():
             game = data["game"]
         except:
             pass
-        return {review, game}
     except:
-        return [None, None]
-
+        pass
+    finally:
+        return {review,game}
 
 def check_admin(search2):
     try:
