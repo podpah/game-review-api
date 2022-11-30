@@ -109,6 +109,7 @@ def mainroute(idd=0):
                     400,
                 )
             elif search["author"] == author or check_admin(search2):
+                print(game, review, type(game), type(review))
                 newvals = {"$set": {"game": game, "review": review}}
                 if game is None:
                     newvals = {"$set": {"review":review}}
