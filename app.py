@@ -51,10 +51,10 @@ def check_admin(search2):
         return truth
 
 
-@app.route(
-    "/entries/<int:idd>", methods=["GET", "PUT", "DELETE"]
-)  # See all posts / Send a new post
-@app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
+# See a specific review / Update an existing review / Delete an existing review
+@app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])
+# See all posts / Send a new post
+@app.route("/entries/", methods=["GET", "POST"])
 def mainroute(idd=0):
     authorise = autho()
     if authorise == "Not verified":
