@@ -1,8 +1,7 @@
-import json
+
 import jwt
 import bcrypt
-import time
-from datetime import datetime,timezone
+import datetime
 
 from dotenv import dotenv_values
 from flask import Flask, request, jsonify
@@ -18,14 +17,13 @@ jwt_sec = config["JWT_SEC"]
 # If there is someone logged in then unauthorized is 403 but if not then it's 401
 
 def autho():
-    bearer = request.headers.get("Authorization")
-    bearer = bearer.split(" ")[-1]
     try:
-        decoded = jwt.decode(bearer, jwt_sec, algorithms="HS256")
-        if (decoded["expiry"] >  datetime.now(tz=timezone.utc)):
-            return decoded["author"]
-        else:
-            return "Token has expired, please login again "
+        bearer = request.headers.get("Authorization")
+        bearer = bearer.split(" ")[-1]
+        decoded = jwt.decode(bearer, jwt_sec, algorithms="HS256") # Automatically checks whether or not the token "exp" is in the future
+        return decoded["author"]
+    except jwt.ExpiredSignatureError:
+        return "Expired"
     except:
         return "Not verified"
 
@@ -45,12 +43,15 @@ def check_admin(search2):
         truth = False
     finally:
         return truth
+
 @app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See all posts / Send a new post
 @app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
 def mainroute(idd=0):
-    authorise = autho();
-    if(authorise == "Not verified"):
-        return jsonify({"message": "INVALID TOKEN , Please get a valid token from the /login endpoint " }),400
+    authorise = autho()
+    if authorise == "Not verified":
+        return jsonify({"message": "INVALID TOKEN , please get a valid token from the /login endpoint " }),400
+    elif authorise == "Expired":
+        return jsonify({"message": "EXPIRED TOKEN , please get a new token from the /login endpoint " }),400
     else:
         review,game = check_json()
         author = authorise
@@ -79,7 +80,7 @@ def mainroute(idd=0):
             elif author != search["author"]:
                 return jsonify("Not authorised to edit this review"), 403
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0, "id": 0})
-            return jsonify(search)
+            return jsonify({"message":"Updated review successfully ", "review":search})
         elif request.method == "DELETE":
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
             search2 = db.users.find_one({"author":author}, {"_id": 0})
@@ -112,13 +113,16 @@ def login():
     data = request.get_json()
     author = data["author"]
     search = db.users.find_one({"author": author},{"_id":0})
+    if search is None:
+         return jsonify("Could not find account, check your spelling"), 401
     dbpass = search["passwd"]
     dbpass = dbpass.encode("utf-8")
     userPass = data["passwd"]
     userPass = userPass.encode("utf-8")
     passCheck = bcrypt.checkpw(userPass, dbpass)
     if passCheck:
-        token = jwt.encode({"author":search["author"], "expiry": datetime.now(tz=timezone.utc) + datetime.timedelta(seconds=60)},jwt_sec, algorithm="HS256")
+        print(datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=120))
+        token = jwt.encode({"author":search["author"], "exp": datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=120)},jwt_sec, algorithm="HS256")
         return jsonify(f"Authorised. Welcome to Game Ratings {author}",token), 200
     else:
         return jsonify("Unauthorized"), 401
