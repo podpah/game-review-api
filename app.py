@@ -33,21 +33,21 @@ def autho():
 
 
 def check_json():
-    review, game = None, None
+    x = {"review": None, "game": None}
     try:
         data = request.get_json()
         try:
-            review = data["review"]
+            x["review"] = data["review"]
         except:
             pass
         try:
-            game = data["game"]
+            x["game"] = data["game"]
         except:
             pass
-    except:
-        pass
     finally:
-        return {review,game}
+        print("Done with check_json")
+    return x
+
 
 def check_admin(search2):
     try:
@@ -83,7 +83,9 @@ def mainroute(idd=0):
             400,
         )
     else:
-        review, game = check_json()
+        x = check_json()
+        review = x["review"]
+        game = x["game"]
         author = authorise
         if request.method == "POST":
             db.ratings_dev.insert_one(
@@ -109,13 +111,12 @@ def mainroute(idd=0):
                     400,
                 )
             elif search["author"] == author or check_admin(search2):
-                print(game, review, type(game), type(review))
                 newvals = {"$set": {"game": game, "review": review}}
                 if game is None:
-                    newvals = {"$set": {"review":review}}
+                    newvals = {"$set": {"review": review}}
                 elif review is None:
-                    newvals = {"$set": {"game":game}}
-                # db.ratings_dev.update_one({"id": idd}, newvals)
+                    newvals = {"$set": {"game": game}}
+                db.ratings_dev.update_one({"id": idd}, newvals)
             elif author != search["author"]:
                 return jsonify("Not authorised to edit this review"), 403
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0, "id": 0})
