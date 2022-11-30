@@ -33,14 +33,21 @@ def autho():
 
 
 def check_json():
+    review,game = None,None
     try:
         data = request.get_json()
-        review = data["review"]
-        game = data["game"]
+        try:
+            review = data["review"]
+        except:
+            None
+        try:
+            game = data["game"]
+        except:
+            None
         return {review, game}
     except:
         return [None, None]
-
+    
 
 def check_admin(search2):
     try:
