@@ -1,6 +1,8 @@
 import json
 import jwt
 import bcrypt
+import time
+from datetime import datetime,timezone
 
 from dotenv import dotenv_values
 from flask import Flask, request, jsonify
@@ -20,7 +22,10 @@ def autho():
     bearer = bearer.split(" ")[-1]
     try:
         decoded = jwt.decode(bearer, jwt_sec, algorithms="HS256")
-        return decoded["author"]
+        if (decoded["expiry"] >  datetime.now(tz=timezone.utc)):
+            return decoded["author"]
+        else:
+            return "Token has expired, please login again "
     except:
         return "Not verified"
 
@@ -32,8 +37,14 @@ def check_json():
         return {review,game}
     except:
         return [None,None]
-    
-    
+
+def check_admin(search2):
+    try:
+        truth = search2["admin"]
+    except:
+        truth = False
+    finally:
+        return truth
 @app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See all posts / Send a new post
 @app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
 def mainroute(idd=0):
@@ -58,16 +69,11 @@ def mainroute(idd=0):
         elif request.method == "PUT":
             search2 = db.users.find_one({"author": author}, {"_id": 0})
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
-            truth = None
-            try:
-                truth = search2["admin"]
-            except:
-                truth = False
             if not search:
                 return jsonify("ID not found"), 400
             elif review == search["review"] and game == search["game"]:
                 return jsonify("The request body is the same as the current information"), 400
-            elif search["author"] == author or truth:
+            elif search["author"] == author or check_admin(search2):
                 newvals = {"$set": {"game": game, "review": review}}
                 db.ratings_dev.update_one(search, newvals)
             elif author != search["author"]:
@@ -77,12 +83,7 @@ def mainroute(idd=0):
         elif request.method == "DELETE":
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0})
             search2 = db.users.find_one({"author":author}, {"_id": 0})
-            truth = None
-            try:
-                truth = search2["admin"]
-            except:
-                truth = False
-            if search["author"] == author or truth:
+            if search["author"] == author or check_admin(search2):
                 teapot = db.ratings_dev.delete_one({"id": idd})
                 return jsonify({"Deleted review": search["review"]}), 418
             elif search["author"] != author:
@@ -117,7 +118,7 @@ def login():
     userPass = userPass.encode("utf-8")
     passCheck = bcrypt.checkpw(userPass, dbpass)
     if passCheck:
-        token = jwt.encode({"id":search["id"], "author":search["author"]},jwt_sec, algorithm="HS256")
+        token = jwt.encode({"author":search["author"], "expiry": datetime.now(tz=timezone.utc) + datetime.timedelta(seconds=60)},jwt_sec, algorithm="HS256")
         return jsonify(f"Authorised. Welcome to Game Ratings {author}",token), 200
     else:
         return jsonify("Unauthorized"), 401
