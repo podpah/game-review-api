@@ -33,21 +33,21 @@ def autho():
 
 
 def check_json():
-    review,game = None,None
+    review, game = None, None
     try:
         data = request.get_json()
         try:
             review = data["review"]
         except:
-            None
+            pass
         try:
             game = data["game"]
         except:
-            None
+            pass
         return {review, game}
     except:
         return [None, None]
-    
+
 
 def check_admin(search2):
     try:
@@ -110,7 +110,11 @@ def mainroute(idd=0):
                 )
             elif search["author"] == author or check_admin(search2):
                 newvals = {"$set": {"game": game, "review": review}}
-                db.ratings_dev.update_one(search, newvals)
+                if game is None:
+                    newvals = {"$set": {"review":review}}
+                elif review is None:
+                    newvals = {"$set": {"game":game}}
+                # db.ratings_dev.update_one({"id": idd}, newvals)
             elif author != search["author"]:
                 return jsonify("Not authorised to edit this review"), 403
             search = db.ratings_dev.find_one({"id": idd}, {"_id": 0, "id": 0})
@@ -160,7 +164,7 @@ def login():
             {
                 "author": search["author"],
                 "exp": datetime.datetime.now(tz=datetime.timezone.utc)
-                + datetime.timedelta(hours=24),
+                       + datetime.timedelta(hours=24),
             },
             jwt_sec,
             algorithm="HS256",
