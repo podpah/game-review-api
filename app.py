@@ -24,12 +24,16 @@ def autho():
     except:
         return "Not verified"
 
-  
+def check_json():
+    try:
+        data = request.get_json()
+        review = data["review"]
+        game = data["game"]
+        return {review,game}
+    except:
+        return [None,None]
     
     
-   
-    
-
 @app.route("/entries/<int:idd>", methods=["GET", "PUT", "DELETE"])  # See all posts / Send a new post
 @app.route("/entries/", methods=["GET", "POST"])  # See all posts / Send a new post
 def mainroute(idd=0):
@@ -37,14 +41,8 @@ def mainroute(idd=0):
     if(authorise == "Not verified"):
         return jsonify({"message": "INVALID TOKEN , Please get a valid token from the /login endpoint " }),400
     else:
-        data,author,review,game = None,None,None,None
+        review,game = check_json()
         author = authorise
-        try:
-            data = request.get_json()
-            review = data["review"]
-            game = data["game"]
-        except:
-            print("No JSON object received in body")
         if request.method == "POST":
             id = db.ratings_dev.count_documents({}) + 1
             db.ratings_dev.insert_one({"id": id, "author": author, "review": review, "game": game})
